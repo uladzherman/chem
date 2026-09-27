@@ -33,6 +33,8 @@
 
 * { box-sizing: border-box; }
 
+[hidden] { display: none !important; }
+
 button, a, .card, .option, .match-item {
   -webkit-tap-highlight-color: transparent;
 }
