@@ -11,7 +11,7 @@
         href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
         integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
         crossorigin="anonymous">
-  <link rel="stylesheet" href="assets/css/style.css?v=4">
+  <link rel="stylesheet" href="assets/css/style.css?v=6">
 </head>
 <body>
   <header class="site-header">
@@ -72,7 +72,8 @@
     <!-- ===== Режим: соответствие ===== -->
     <section class="view matchview" id="viewMatch" hidden>
       <p class="quiz__meta" id="matchMeta">Раунд 0 · Собрано 0 · Ошибок 0</p>
-      <p class="match__hint">Соедините тривиальное название слева с его формулой справа.</p>
+      <div class="chips" id="matchTypeChips" role="tablist" aria-label="Тип пар"></div>
+      <p class="match__hint" id="matchHint">Соедините тривиальное название слева с его формулой справа.</p>
       <div class="match__wrap">
         <svg class="match__lines" id="matchLines" aria-hidden="true"></svg>
         <div class="match__board" id="matchBoard">
@@ -90,8 +91,9 @@
     <!-- ===== Режим: формулы ===== -->
     <section class="view quiz" id="viewFormulas" hidden>
       <p class="quiz__meta" id="formulaMeta">Задача 0 · Верно 0 · Ошибок 0</p>
+      <div class="chips" id="formulaChips" role="tablist" aria-label="Тип заданий"></div>
       <div class="quiz__card">
-        <p class="quiz__prompt">Какая формула соответствует веществу:</p>
+        <p class="quiz__prompt" id="formulaPrompt">Какая формула соответствует веществу:</p>
         <p class="quiz__caption" id="formulaSection"></p>
         <p class="quiz__name" id="formulaName"></p>
       </div>
@@ -157,8 +159,9 @@
           integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
           crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/mhchem.min.js"></script>
-  <script defer src="assets/js/data/cards.js?v=4"></script>
-  <script defer src="assets/js/data/reactions.js?v=5"></script>
-  <script defer src="assets/js/app.js?v=4"></script>
+  <script defer src="assets/js/data/cards.js?v=6"></script>
+  <script defer src="assets/js/data/classes.js?v=6"></script>
+  <script defer src="assets/js/data/reactions.js?v=6"></script>
+  <script defer src="assets/js/app.js?v=6"></script>
 </body>
 </html>

@@ -16,6 +16,11 @@
   // Стабильный ID карточки (не зависит от порядка карточек).
   function cardId(card) { return card.t; }
   var CARD_ENTRIES = window.CARDS.map(function (c) { return { card: c, id: cardId(c) }; });
+  // Для тестов «название → формула», «формула → название» и пар «название ↔ формула»
+  // используем только карточки-названия (без качественных реакций).
+  var NAME_ENTRIES = CARD_ENTRIES.filter(function (e) { return e.card.kind !== "quality"; });
+  var QUALITY_ENTRIES = CARD_ENTRIES.filter(function (e) { return e.card.kind === "quality"; });
+  var CLASS_ENTRIES = (window.CLASSES || []).map(function (c, i) { return { card: c, id: "class::" + i }; });
 
   function load(key, fallback) {
     try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
@@ -43,10 +48,10 @@
     known: new Set(load(LS.known, [])),
     srs: load(LS.srs, {}),
     stats: load(LS.stats, {}),
-    formula: { order: [], pos: 0 },
+    formula: { order: [], pos: 0, kind: "substance" },
     names: { order: [], pos: 0 },
     reaction: { order: [], pos: 0 },
-    match: { set: [], selectedId: null, matched: {}, errors: 0 },
+    match: { set: [], selectedId: null, matched: {}, errors: 0, type: "name" },
     review: { queue: [] }
   };
   var statKeys = ["formulaOk", "formulaBad", "namesOk", "namesBad", "reactOk", "reactBad", "matchOk", "matchBad"];
@@ -103,6 +108,7 @@
   function createCard(entry, opts) {
     opts = opts || {};
     var card = entry.card, id = entry.id;
+    var isQuality = card.kind === "quality";
 
     var root = document.createElement("div");
     root.className = "card" + (state.known.has(id) ? " is-known" : "");
@@ -126,7 +132,7 @@
     title.textContent = card.t;
     var hint = document.createElement("span");
     hint.className = "card__hint";
-    hint.textContent = "Нажмите, чтобы увидеть формулу";
+    hint.textContent = isQuality ? "Нажмите, чтобы увидеть реактив и признак" : "Нажмите, чтобы увидеть формулу";
     front.appendChild(badge); front.appendChild(title); front.appendChild(hint);
 
     // оборот — формула + систематическое название
@@ -138,18 +144,19 @@
 
     var formula = document.createElement("div");
     formula.className = "formula";
-    renderFormula(formula, card.f);
+    if (card.f) renderFormula(formula, card.f);
 
     var meta = document.createElement("div");
     meta.className = "card__meta";
     var sys = document.createElement("p");
     sys.className = "card__sys";
-    sys.textContent = card.sys;
+    sys.textContent = isQuality ? ("Реактив: " + card.reagent) : card.sys;
     meta.appendChild(sys);
-    if (card.n) {
+    var noteText = isQuality ? ("Признак: " + card.sign) : card.n;
+    if (noteText) {
       var note = document.createElement("p");
       note.className = "card__note";
-      appendRich(note, card.n);
+      appendRich(note, noteText);
       meta.appendChild(note);
     }
 
@@ -234,6 +241,45 @@
     chipsEl.appendChild(frag);
   }
 
+  function buildChipGroup(box, items, activeId, attr, onPick) {
+    box.innerHTML = "";
+    items.forEach(function (item) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "chip" + (activeId === item.id ? " is-active" : "");
+      btn.textContent = item.title;
+      btn.dataset[attr] = item.id;
+      btn.addEventListener("click", function () {
+        box.querySelectorAll(".chip").forEach(function (c) {
+          c.classList.toggle("is-active", c.dataset[attr] === item.id);
+        });
+        onPick(item.id);
+      });
+      box.appendChild(btn);
+    });
+  }
+
+  function buildFormulaChips() {
+    buildChipGroup(byId("formulaChips"), [
+      { id: "substance", title: "Вещество → формула" },
+      { id: "class", title: "Класс → общая формула" }
+    ], state.formula.kind, "kind", function (id) {
+      state.formula.kind = id;
+      formulaNewOrder();
+      formulaRender();
+    });
+  }
+
+  function buildMatchTypeChips() {
+    buildChipGroup(byId("matchTypeChips"), [
+      { id: "name", title: "Название ↔ формула" },
+      { id: "quality", title: "Вещество ↔ реактив" }
+    ], state.match.type, "type", function (id) {
+      state.match.type = id;
+      matchNewRound();
+    });
+  }
+
   function renderBrowse() {
     var base = CARD_ENTRIES.slice();
     state.list = state.section === "all" ? base : base.filter(function (x) { return x.card.s === state.section; });
@@ -307,37 +353,51 @@
   }
 
   /* ---------- Режим «Соответствие» ---------- */
+  function matchPool() { return state.match.type === "quality" ? QUALITY_ENTRIES : NAME_ENTRIES; }
+  function matchLeftText(card) { return state.match.type === "quality" ? card.sub : card.t; }
+  function matchRightValue(card) { return state.match.type === "quality" ? card.reagent : card.f; }
+
   function matchNewRound() {
-    var pool = shuffleArr(CARD_ENTRIES.slice()).slice(0, 4);
-    state.match.set = pool;
+    var pool = shuffleArr(matchPool().slice());
+    var chosen = [], used = {};
+    for (var i = 0; i < pool.length && chosen.length < 4; i++) {
+      var key = matchRightValue(pool[i].card);
+      if (used[key]) continue;
+      used[key] = 1;
+      chosen.push(pool[i]);
+    }
+    state.match.set = chosen;
     state.match.selectedId = null;
     state.match.matched = {};
-    state.match.errors = 0;
 
     var namesBox = byId("matchNames"), formulasBox = byId("matchFormulas");
     namesBox.innerHTML = "";
     formulasBox.innerHTML = "";
     byId("matchNext").disabled = true;
     resetFeedback("matchFeedback");
+    byId("matchHint").textContent = state.match.type === "quality"
+      ? "Соедините вещество слева с реактивом для его качественного определения справа."
+      : "Соедините тривиальное название слева с его формулой справа.";
 
-    var namesOrder = shuffleArr(pool.slice());
-    var formulasOrder = shuffleArr(pool.slice());
+    var leftOrder = shuffleArr(chosen.slice());
+    var rightOrder = shuffleArr(chosen.slice());
 
-    namesOrder.forEach(function (entry) {
+    leftOrder.forEach(function (entry) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "match-item";
       btn.dataset.id = entry.id;
-      btn.textContent = entry.card.t;
+      btn.textContent = matchLeftText(entry.card);
       btn.addEventListener("click", function () { matchSelectName(btn); });
       namesBox.appendChild(btn);
     });
-    formulasOrder.forEach(function (entry) {
+    rightOrder.forEach(function (entry) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "match-item";
       btn.dataset.id = entry.id;
-      renderMathInline(btn, entry.card.f);
+      if (state.match.type === "quality") btn.textContent = entry.card.reagent;
+      else renderMathInline(btn, entry.card.f);
       btn.addEventListener("click", function () { matchPickFormula(btn); });
       formulasBox.appendChild(btn);
     });
@@ -414,7 +474,7 @@
   function matchPickFormula(btn) {
     if (btn.disabled) return;
     if (!state.match.selectedId) {
-      byId("matchFeedback").textContent = "Сначала выберите название слева.";
+      byId("matchFeedback").textContent = "Сначала выберите элемент слева.";
       byId("matchFeedback").className = "feedback feedback--info";
       return;
     }
@@ -457,44 +517,54 @@
     byId("matchReset").disabled = (s.matchOk + s.matchBad) === 0;
   }
 
-  /* ---------- Режим «Формулы» (название → формула) ---------- */
-  var allFormulas = CARD_ENTRIES.map(function (e) { return wrapMath(e.card.f); });
-  var allNames = CARD_ENTRIES.map(function (e) { return e.card.t; });
+  /* ---------- Режим «Формулы» (вещество → формула / класс → общая формула) ---------- */
+  var allNames = NAME_ENTRIES.map(function (e) { return e.card.t; });
+
+  function formulaSource() { return state.formula.kind === "class" ? CLASS_ENTRIES : NAME_ENTRIES; }
 
   function formulaNewOrder() {
-    state.formula.order = shuffleArr(CARD_ENTRIES.map(function (_, i) { return i; }));
+    state.formula.order = shuffleArr(formulaSource().map(function (_, i) { return i; }));
     state.formula.pos = 0;
   }
-  function formulaDistractors(card) {
-    var same = CARD_ENTRIES.filter(function (e) { return e.card.s === card.s && e.card.f !== card.f; });
-    shuffleArr(same);
+  function formulaDistractors(entry) {
+    var source = formulaSource();
+    var correct = wrapMath(entry.card.f);
     var res = [];
-    for (var i = 0; i < same.length && res.length < 3; i++) {
-      var f = wrapMath(same[i].card.f);
-      if (res.indexOf(f) === -1 && f !== wrapMath(card.f)) res.push(f);
+    function push(f) {
+      f = wrapMath(f);
+      if (f !== correct && res.indexOf(f) === -1 && res.length < 3) res.push(f);
     }
-    var all = shuffleArr(allFormulas.slice());
-    for (var j = 0; j < all.length && res.length < 3; j++) {
-      if (all[j] !== wrapMath(card.f) && res.indexOf(all[j]) === -1) res.push(all[j]);
-    }
+    var same = shuffleArr(source.filter(function (e) {
+      return e.card.s === entry.card.s && e.card.f !== entry.card.f;
+    }));
+    same.forEach(function (e) { if (res.length < 3) push(e.card.f); });
+    shuffleArr(source.map(function (e) { return wrapMath(e.card.f); }))
+      .forEach(function (f) { if (res.length < 3) push(f); });
     return res;
   }
   function formulaRender() {
     if (!state.formula.order.length) formulaNewOrder();
-    var entry = CARD_ENTRIES[state.formula.order[state.formula.pos % state.formula.order.length]];
+    var source = formulaSource();
+    var entry = source[state.formula.order[state.formula.pos % state.formula.order.length]];
     state.formula.answered = false;
 
-    byId("formulaSection").textContent = SECTION_TITLE[entry.card.s] || "";
+    var isClass = state.formula.kind === "class";
+    byId("formulaPrompt").textContent = isClass
+      ? "Какая общая формула соответствует классу соединений:"
+      : "Какая формула соответствует веществу:";
+    byId("formulaSection").textContent = isClass
+      ? "Классы органических соединений"
+      : (SECTION_TITLE[entry.card.s] || "");
     byId("formulaName").textContent = entry.card.t;
     resetFeedback("formulaFeedback");
     formulaMeta();
 
     renderRichOptions(byId("formulaOptions"),
-      buildChoices(wrapMath(entry.card.f), formulaDistractors(entry.card), 3),
+      buildChoices(wrapMath(entry.card.f), formulaDistractors(entry), 3),
       function (btn, c) { formulaAnswer(btn, c.ok); });
   }
   function formulaMeta() {
-    var s = state.stats, total = CARD_ENTRIES.length;
+    var s = state.stats, total = formulaSource().length;
     byId("formulaMeta").textContent = "Задача " + (state.formula.pos + 1) + " из " + total +
       " · Верно " + s.formulaOk + " · Ошибок " + s.formulaBad;
     byId("formulaReset").disabled = (s.formulaOk + s.formulaBad) === 0;
@@ -516,11 +586,11 @@
 
   /* ---------- Режим «Названия» (формула → название) ---------- */
   function namesNewOrder() {
-    state.names.order = shuffleArr(CARD_ENTRIES.map(function (_, i) { return i; }));
+    state.names.order = shuffleArr(NAME_ENTRIES.map(function (_, i) { return i; }));
     state.names.pos = 0;
   }
   function namesDistractors(card) {
-    var same = CARD_ENTRIES.filter(function (e) { return e.card.s === card.s && e.card.t !== card.t; });
+    var same = NAME_ENTRIES.filter(function (e) { return e.card.s === card.s && e.card.t !== card.t; });
     shuffleArr(same);
     var res = [];
     for (var i = 0; i < same.length && res.length < 3; i++) {
@@ -534,7 +604,7 @@
   }
   function namesRender() {
     if (!state.names.order.length) namesNewOrder();
-    var entry = CARD_ENTRIES[state.names.order[state.names.pos % state.names.order.length]];
+    var entry = NAME_ENTRIES[state.names.order[state.names.pos % state.names.order.length]];
     state.names.answered = false;
 
     byId("namesSection").textContent = SECTION_TITLE[entry.card.s] || "";
@@ -547,7 +617,7 @@
       function (btn, c) { namesAnswer(btn, c.ok); });
   }
   function namesMeta() {
-    var s = state.stats, total = CARD_ENTRIES.length;
+    var s = state.stats, total = NAME_ENTRIES.length;
     byId("namesMeta").textContent = "Задача " + (state.names.pos + 1) + " из " + total +
       " · Верно " + s.namesOk + " · Ошибок " + s.namesBad;
     byId("namesReset").disabled = (s.namesOk + s.namesBad) === 0;
@@ -707,6 +777,8 @@
   /* ---------- Инициализация ---------- */
   function init() {
     buildChips();
+    buildFormulaChips();
+    buildMatchTypeChips();
     renderBrowse();
     updateProgress();
     updateDueBadge();
