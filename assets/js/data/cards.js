@@ -4,9 +4,12 @@
 //   название, f — формула (\ce{}), n — примечание.
 // Поля карточек качественных реакций: kind:"quality", sub — вещество, reagent — реактив,
 //   sign — признак, f — формула реактива.
+// Поля карточек кислот: kind:"acid", f — формула кислоты, anion — формула кислотного
+//   остатка, anionName — название остатка.
 
 window.SECTIONS = [
   { id: "salts", title: "Соли и кристаллогидраты" },
+  { id: "acids", title: "Кислоты и кислотные остатки" },
   { id: "minerals", title: "Минералы и оксиды" },
   { id: "organic", title: "Органические соединения" },
   { id: "quality", title: "Качественные реакции" }
@@ -41,6 +44,34 @@ window.CARDS = [
   { s: "salts", t: "Фосфорит (апатит)", sys: "Ортофосфат кальция", f: "\\ce{Ca3(PO4)2}" },
   { s: "salts", t: "Сильвин", sys: "Хлорид калия", f: "\\ce{KCl}" },
   { s: "salts", t: "Доломит", sys: "Карбонат кальция-магния", f: "\\ce{CaCO3 * MgCO3}" },
+
+  // ==================== КИСЛОТЫ И КИСЛОТНЫЕ ОСТАТКИ ====================
+  { s: "acids", kind: "acid", t: "Соляная (хлороводородная) кислота", f: "\\ce{HCl}",
+    anion: "\\ce{Cl-}", anionName: "хлорид" },
+  { s: "acids", kind: "acid", t: "Плавиковая (фтороводородная) кислота", f: "\\ce{HF}",
+    anion: "\\ce{F-}", anionName: "фторид" },
+  { s: "acids", kind: "acid", t: "Бромоводородная кислота", f: "\\ce{HBr}",
+    anion: "\\ce{Br-}", anionName: "бромид" },
+  { s: "acids", kind: "acid", t: "Иодоводородная кислота", f: "\\ce{HI}",
+    anion: "\\ce{I-}", anionName: "иодид" },
+  { s: "acids", kind: "acid", t: "Сероводородная кислота", f: "\\ce{H2S}",
+    anion: "\\ce{S^{2-}}", anionName: "сульфид" },
+  { s: "acids", kind: "acid", t: "Серная кислота", f: "\\ce{H2SO4}",
+    anion: "\\ce{SO4^{2-}}", anionName: "сульфат" },
+  { s: "acids", kind: "acid", t: "Сернистая кислота", f: "\\ce{H2SO3}",
+    anion: "\\ce{SO3^{2-}}", anionName: "сульфит" },
+  { s: "acids", kind: "acid", t: "Азотная кислота", f: "\\ce{HNO3}",
+    anion: "\\ce{NO3-}", anionName: "нитрат" },
+  { s: "acids", kind: "acid", t: "Азотистая кислота", f: "\\ce{HNO2}",
+    anion: "\\ce{NO2-}", anionName: "нитрит" },
+  { s: "acids", kind: "acid", t: "Фосфорная (ортофосфорная) кислота", f: "\\ce{H3PO4}",
+    anion: "\\ce{PO4^{3-}}", anionName: "ортофосфат" },
+  { s: "acids", kind: "acid", t: "Угольная кислота", f: "\\ce{H2CO3}",
+    anion: "\\ce{CO3^{2-}}", anionName: "карбонат" },
+  { s: "acids", kind: "acid", t: "Кремниевая кислота", f: "\\ce{H2SiO3}",
+    anion: "\\ce{SiO3^{2-}}", anionName: "силикат" },
+  { s: "acids", kind: "acid", t: "Уксусная кислота (этановая)", f: "\\ce{CH3COOH}",
+    anion: "\\ce{CH3COO-}", anionName: "ацетат" },
 
   // ==================== МИНЕРАЛЫ И ОКСИДЫ ====================
   { s: "minerals", t: "Негашёная известь", sys: "Оксид кальция", f: "\\ce{CaO}",

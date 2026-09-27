@@ -109,6 +109,7 @@
     opts = opts || {};
     var card = entry.card, id = entry.id;
     var isQuality = card.kind === "quality";
+    var isAcid = card.kind === "acid";
 
     var root = document.createElement("div");
     root.className = "card" + (state.known.has(id) ? " is-known" : "");
@@ -132,7 +133,9 @@
     title.textContent = card.t;
     var hint = document.createElement("span");
     hint.className = "card__hint";
-    hint.textContent = isQuality ? "Нажмите, чтобы увидеть реактив и признак" : "Нажмите, чтобы увидеть формулу";
+    hint.textContent = isQuality
+      ? "Нажмите, чтобы увидеть реактив и признак"
+      : (isAcid ? "Нажмите, чтобы увидеть кислотный остаток" : "Нажмите, чтобы увидеть формулу");
     front.appendChild(badge); front.appendChild(title); front.appendChild(hint);
 
     // оборот — формула + систематическое название
@@ -150,9 +153,13 @@
     meta.className = "card__meta";
     var sys = document.createElement("p");
     sys.className = "card__sys";
-    sys.textContent = isQuality ? ("Реактив: " + card.reagent) : card.sys;
+    if (isAcid) appendRich(sys, "Кислотный остаток: $" + card.anion + "$");
+    else sys.textContent = isQuality ? ("Реактив: " + card.reagent) : card.sys;
     meta.appendChild(sys);
-    var noteText = isQuality ? ("Признак: " + card.sign) : card.n;
+    var noteText;
+    if (isAcid) noteText = "Название остатка: " + card.anionName;
+    else if (isQuality) noteText = "Признак: " + card.sign;
+    else noteText = card.n;
     if (noteText) {
       var note = document.createElement("p");
       note.className = "card__note";
