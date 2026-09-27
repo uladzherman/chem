@@ -421,7 +421,7 @@ body {
 }
 
 /* ===== Quiz (формулы / названия / реакции) ===== */
-.view.quiz, .view.review, .view.match {
+.view.quiz, .view.review, .view.matchview {
   padding: 1.75rem 0 3rem;
   max-width: 720px;
   margin-inline: auto;
