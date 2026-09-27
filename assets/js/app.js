@@ -20,6 +20,7 @@
   // используем только карточки-названия (без качественных реакций).
   var NAME_ENTRIES = CARD_ENTRIES.filter(function (e) { return e.card.kind !== "quality"; });
   var QUALITY_ENTRIES = CARD_ENTRIES.filter(function (e) { return e.card.kind === "quality"; });
+  var ACID_ENTRIES = CARD_ENTRIES.filter(function (e) { return e.card.kind === "acid"; });
   var CLASS_ENTRIES = (window.CLASSES || []).map(function (c, i) { return { card: c, id: "class::" + i }; });
 
   function load(key, fallback) {
@@ -280,6 +281,7 @@
   function buildMatchTypeChips() {
     buildChipGroup(byId("matchTypeChips"), [
       { id: "name", title: "Название ↔ формула" },
+      { id: "acid", title: "Кислота ↔ остаток" },
       { id: "quality", title: "Вещество ↔ реактив" }
     ], state.match.type, "type", function (id) {
       state.match.type = id;
@@ -360,9 +362,18 @@
   }
 
   /* ---------- Режим «Соответствие» ---------- */
-  function matchPool() { return state.match.type === "quality" ? QUALITY_ENTRIES : NAME_ENTRIES; }
+  function matchPool() {
+    if (state.match.type === "quality") return QUALITY_ENTRIES;
+    if (state.match.type === "acid") return ACID_ENTRIES;
+    return NAME_ENTRIES;
+  }
   function matchLeftText(card) { return state.match.type === "quality" ? card.sub : card.t; }
-  function matchRightValue(card) { return state.match.type === "quality" ? card.reagent : card.f; }
+  function matchRightValue(card) {
+    if (state.match.type === "quality") return card.reagent;
+    if (state.match.type === "acid") return card.anion;
+    return card.f;
+  }
+  function matchRightIsText() { return state.match.type === "quality"; }
 
   function matchNewRound() {
     var pool = shuffleArr(matchPool().slice());
@@ -382,9 +393,12 @@
     formulasBox.innerHTML = "";
     byId("matchNext").disabled = true;
     resetFeedback("matchFeedback");
-    byId("matchHint").textContent = state.match.type === "quality"
-      ? "Соедините вещество слева с реактивом для его качественного определения справа."
-      : "Соедините тривиальное название слева с его формулой справа.";
+    var hints = {
+      quality: "Соедините вещество слева с реактивом для его качественного определения справа.",
+      acid: "Соедините кислоту слева с её кислотным остатком справа.",
+      name: "Соедините тривиальное название слева с его формулой справа."
+    };
+    byId("matchHint").textContent = hints[state.match.type] || hints.name;
 
     var leftOrder = shuffleArr(chosen.slice());
     var rightOrder = shuffleArr(chosen.slice());
@@ -403,8 +417,8 @@
       btn.type = "button";
       btn.className = "match-item";
       btn.dataset.id = entry.id;
-      if (state.match.type === "quality") btn.textContent = entry.card.reagent;
-      else renderMathInline(btn, entry.card.f);
+      if (matchRightIsText()) btn.textContent = matchRightValue(entry.card);
+      else renderMathInline(btn, matchRightValue(entry.card));
       btn.addEventListener("click", function () { matchPickFormula(btn); });
       formulasBox.appendChild(btn);
     });
@@ -619,8 +633,16 @@
     resetFeedback("namesFeedback");
     namesMeta();
 
+    // Одна формула может иметь несколько верных названий (например, $\\ce{H2S}$ —
+    // сероводород и сероводородная кислота). Исключаем их из дистракторов.
+    var valid = NAME_ENTRIES
+      .filter(function (e) { return e.card.f === entry.card.f; })
+      .map(function (e) { return e.card.t; });
+    var distractors = namesDistractors(entry.card).filter(function (n) {
+      return valid.indexOf(n) === -1;
+    });
     renderRichOptions(byId("namesOptions"),
-      buildChoices(entry.card.t, namesDistractors(entry.card), 3),
+      buildChoices(entry.card.t, distractors, 3),
       function (btn, c) { namesAnswer(btn, c.ok); });
   }
   function namesMeta() {
