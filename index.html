@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Тренажёр по химии — тривиальные названия, формулы, реакции</title>
+  <meta name="description" content="Тренажёр по химии: карточки тривиальных названий, соответствие «название ↔ формула», выбор формулы и названия, реакции и интервальное повторение.">
+  <link rel="icon" href="data:,">
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+        integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <div class="header__top">
+        <div class="header__head">
+          <h1>Тренажёр по химии</h1>
+          <p class="subtitle">Тривиальные названия, формулы и реакции — подготовка к ЦЭ/ЦТ</p>
+        </div>
+        <div class="socials">
+          <a class="social-icon" href="https://www.instagram.com/fizmathimbio/" target="_blank"
+             rel="noopener noreferrer" aria-label="Инстаграм" title="Инстаграм">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+              <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+              <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+              <circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/>
+            </svg>
+          </a>
+          <a class="social-icon" href="https://t.me/fizmathimbio" target="_blank"
+             rel="noopener noreferrer" aria-label="Телеграм" title="Телеграм">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="m20.665 3.717-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701-.323 4.693c.472 0 .68-.217.945-.477l2.266-2.205 4.716 3.483c.868.479 1.49.232 1.707-.808l3.086-14.54c.315-1.273-.487-1.85-1.323-1.512z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <nav class="tabs" id="tabs" aria-label="Режимы">
+        <button type="button" class="tab is-active" data-mode="cards">Карточки</button>
+        <button type="button" class="tab" data-mode="match">Соответствие</button>
+        <button type="button" class="tab" data-mode="formulas">Формулы</button>
+        <button type="button" class="tab" data-mode="names">Названия</button>
+        <button type="button" class="tab" data-mode="reactions">Реакции</button>
+        <button type="button" class="tab" data-mode="review">Повторение <span class="tab__count" id="dueCount">0</span></button>
+      </nav>
+
+      <div class="progress" id="progress" aria-label="Прогресс изучения">
+        <div class="progress__bar"><span id="progressFill"></span></div>
+        <span class="progress__label" id="progressLabel">0 / 0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ===== Режим: карточки ===== -->
+    <section class="view" id="viewCards">
+      <div class="controls">
+        <div class="chips" id="sectionChips" role="tablist" aria-label="Разделы"></div>
+        <div class="buttons">
+          <button type="button" id="shuffleBtn" class="btn">Перемешать</button>
+          <button type="button" id="resetBtn" class="btn btn--ghost">Сбросить прогресс</button>
+        </div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <p class="empty" id="empty" hidden>В этом разделе нет карточек.</p>
+    </section>
+
+    <!-- ===== Режим: соответствие ===== -->
+    <section class="view match" id="viewMatch" hidden>
+      <p class="quiz__meta" id="matchMeta">Раунд 0 · Собрано 0 · Ошибок 0</p>
+      <p class="match__hint">Соедините тривиальное название слева с его формулой справа.</p>
+      <div class="match" id="matchBoard">
+        <div class="match__col" id="matchNames"></div>
+        <div class="match__col" id="matchFormulas"></div>
+      </div>
+      <div class="quiz__row">
+        <button type="button" id="matchNext" class="btn" disabled>Следующий раунд</button>
+        <button type="button" id="matchReset" class="btn btn--ghost">Сбросить прогресс</button>
+      </div>
+      <p class="feedback" id="matchFeedback"></p>
+    </section>
+
+    <!-- ===== Режим: формулы ===== -->
+    <section class="view quiz" id="viewFormulas" hidden>
+      <p class="quiz__meta" id="formulaMeta">Задача 0 · Верно 0 · Ошибок 0</p>
+      <div class="quiz__card">
+        <p class="quiz__prompt">Какая формула соответствует веществу:</p>
+        <p class="quiz__caption" id="formulaSection"></p>
+        <p class="quiz__name" id="formulaName"></p>
+      </div>
+      <div class="options" id="formulaOptions"></div>
+      <div class="quiz__row">
+        <button type="button" id="formulaNext" class="btn btn--ghost">Дальше</button>
+        <button type="button" id="formulaReset" class="btn btn--ghost">Сбросить прогресс</button>
+      </div>
+      <p class="feedback" id="formulaFeedback"></p>
+    </section>
+
+    <!-- ===== Режим: названия ===== -->
+    <section class="view quiz" id="viewNames" hidden>
+      <p class="quiz__meta" id="namesMeta">Задача 0 · Верно 0 · Ошибок 0</p>
+      <div class="quiz__card">
+        <p class="quiz__prompt">Как называется это вещество?</p>
+        <p class="quiz__caption" id="namesSection"></p>
+        <div class="quiz__symbol" id="namesFormula"></div>
+      </div>
+      <div class="options" id="namesOptions"></div>
+      <div class="quiz__row">
+        <button type="button" id="namesNext" class="btn btn--ghost">Дальше</button>
+        <button type="button" id="namesReset" class="btn btn--ghost">Сбросить прогресс</button>
+      </div>
+      <p class="feedback" id="namesFeedback"></p>
+    </section>
+
+    <!-- ===== Режим: реакции ===== -->
+    <section class="view quiz" id="viewReactions" hidden>
+      <p class="quiz__meta" id="reactionMeta">Задача 0 · Верно 0 · Ошибок 0</p>
+      <div class="quiz__card">
+        <p class="quiz__prompt">Выберите правильный ответ:</p>
+        <div class="quiz__task" id="reactionBody"></div>
+      </div>
+      <div class="options" id="reactionOptions"></div>
+      <div class="quiz__row">
+        <button type="button" id="reactionNext" class="btn btn--ghost">Дальше</button>
+        <button type="button" id="reactionReset" class="btn btn--ghost">Сбросить прогресс</button>
+      </div>
+      <p class="feedback" id="reactionFeedback"></p>
+    </section>
+
+    <!-- ===== Режим: повторение (SRS) ===== -->
+    <section class="view review" id="viewReview" hidden>
+      <p class="quiz__meta" id="reviewMeta"></p>
+      <div class="review__slot" id="reviewSlot"></div>
+      <div class="review__grades" id="reviewGrades" hidden>
+        <button type="button" class="btn btn--hard" data-grade="hard">Трудно</button>
+        <button type="button" class="btn btn--good" data-grade="good">Нормально</button>
+        <button type="button" class="btn btn--easy" data-grade="easy">Легко</button>
+      </div>
+      <div class="review__done" id="reviewDone" hidden>
+        <p>На сегодня повторений нет.</p>
+      </div>
+      <div class="review__footer">
+        <button type="button" id="reviewReset" class="btn btn--ghost">Сбросить прогресс повторений</button>
+      </div>
+    </section>
+  </main>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+          integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+          crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/mhchem.min.js"></script>
+  <script defer src="assets/js/data/cards.js"></script>
+  <script defer src="assets/js/data/reactions.js"></script>
+  <script defer src="assets/js/app.js"></script>
+</body>
+</html>
