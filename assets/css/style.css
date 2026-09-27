@@ -539,10 +539,26 @@ body {
   margin: 0 0 1rem;
 }
 
-.match {
+.match__wrap {
+  position: relative;
+}
+
+.match__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.match__board {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 3.5rem;
+  position: relative;
+  z-index: 2;
 }
 
 .match__col {
@@ -550,6 +566,15 @@ body {
   gap: 0.5rem;
   align-content: start;
 }
+
+.match__line {
+  fill: none;
+  stroke: var(--known);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.match__arrow { fill: var(--known); }
 
 .match-item {
   border: 1px solid var(--border);
@@ -593,7 +618,7 @@ body {
 .match-item .katex { font-size: 1.05rem; }
 
 @media (max-width: 480px) {
-  .match { gap: 0.5rem; }
+  .match__board { gap: 1.75rem; }
   .match-item { font-size: 0.85rem; padding: 0.5rem 0.6rem; }
 }
 

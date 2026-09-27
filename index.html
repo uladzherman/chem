@@ -73,9 +73,12 @@
     <section class="view match" id="viewMatch" hidden>
       <p class="quiz__meta" id="matchMeta">Раунд 0 · Собрано 0 · Ошибок 0</p>
       <p class="match__hint">Соедините тривиальное название слева с его формулой справа.</p>
-      <div class="match" id="matchBoard">
-        <div class="match__col" id="matchNames"></div>
-        <div class="match__col" id="matchFormulas"></div>
+      <div class="match__wrap">
+        <svg class="match__lines" id="matchLines" aria-hidden="true"></svg>
+        <div class="match__board" id="matchBoard">
+          <div class="match__col" id="matchNames"></div>
+          <div class="match__col" id="matchFormulas"></div>
+        </div>
       </div>
       <div class="quiz__row">
         <button type="button" id="matchNext" class="btn" disabled>Следующий раунд</button>

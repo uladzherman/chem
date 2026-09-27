@@ -33,6 +33,7 @@
     return a;
   }
   function wrapMath(s) { return String(s).indexOf("$") === -1 ? "$" + s + "$" : String(s); }
+  var SVG_NS = "http://www.w3.org/2000/svg";
 
   var state = {
     mode: "cards",
@@ -341,6 +342,7 @@
       formulasBox.appendChild(btn);
     });
     matchMeta();
+    window.requestAnimationFrame(drawMatchLines);
   }
 
   function matchNameBtn(id) {
@@ -349,6 +351,54 @@
       if (b.dataset.id === id) found = b;
     });
     return found;
+  }
+  function matchFormulaBtn(id) {
+    var found = null;
+    byId("matchFormulas").querySelectorAll(".match-item").forEach(function (b) {
+      if (b.dataset.id === id) found = b;
+    });
+    return found;
+  }
+
+  // Линии-стрелки между соединёнными плитками.
+  function drawMatchLines() {
+    var svg = byId("matchLines"), wrap = svg && svg.parentNode;
+    if (!svg || !wrap) return;
+    var wrect = wrap.getBoundingClientRect();
+    if (!wrect.width || !wrect.height) { svg.innerHTML = ""; return; }
+    svg.setAttribute("viewBox", "0 0 " + wrect.width + " " + wrect.height);
+    svg.innerHTML = "";
+
+    var defs = document.createElementNS(SVG_NS, "defs");
+    var marker = document.createElementNS(SVG_NS, "marker");
+    marker.setAttribute("id", "matchArrow");
+    marker.setAttribute("viewBox", "0 0 10 10");
+    marker.setAttribute("refX", "8");
+    marker.setAttribute("refY", "5");
+    marker.setAttribute("markerWidth", "7");
+    marker.setAttribute("markerHeight", "7");
+    marker.setAttribute("orient", "auto-start-reverse");
+    var tip = document.createElementNS(SVG_NS, "path");
+    tip.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+    tip.setAttribute("class", "match__arrow");
+    marker.appendChild(tip);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    Object.keys(state.match.matched).forEach(function (id) {
+      var n = matchNameBtn(id), f = matchFormulaBtn(id);
+      if (!n || !f) return;
+      var nr = n.getBoundingClientRect(), fr = f.getBoundingClientRect();
+      var x1 = nr.right - wrect.left, y1 = nr.top + nr.height / 2 - wrect.top;
+      var x2 = fr.left - wrect.left, y2 = fr.top + fr.height / 2 - wrect.top;
+      var mid = (x1 + x2) / 2;
+      var path = document.createElementNS(SVG_NS, "path");
+      path.setAttribute("d", "M " + x1 + " " + y1 +
+        " C " + mid + " " + y1 + ", " + mid + " " + y2 + ", " + x2 + " " + y2);
+      path.setAttribute("class", "match__line");
+      path.setAttribute("marker-end", "url(#matchArrow)");
+      svg.appendChild(path);
+    });
   }
 
   function matchSelectName(btn) {
@@ -385,6 +435,7 @@
         byId("matchFeedback").className = "feedback feedback--ok";
       }
       matchMeta();
+      window.requestAnimationFrame(drawMatchLines);
     } else {
       state.stats.matchBad++;
       save(LS.stats, state.stats);
@@ -726,6 +777,7 @@
       window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(function () {
         fitAllWithin(document);
+        if (state.mode === "match") drawMatchLines();
         if (state.mode === "formulas") fitOptions(byId("formulaOptions"));
         if (state.mode === "names") fitOptions(byId("namesOptions"));
         if (state.mode === "reactions") fitOptions(byId("reactionOptions"));
