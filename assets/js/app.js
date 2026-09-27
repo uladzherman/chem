@@ -580,6 +580,9 @@
     var body = byId("reactionBody");
     body.innerHTML = "";
     appendRich(body, task.q);
+    var caption = byId("reactionCaption");
+    caption.textContent = task.hint || "";
+    caption.hidden = !task.hint;
     resetFeedback("reactionFeedback");
     reactionMeta();
 
